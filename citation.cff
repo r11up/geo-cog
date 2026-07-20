@@ -1,0 +1,46 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the software repository and, where appropriate, the accompanying paper and dataset."
+
+title: "GeoCog: A Neuro-Geospatial Framework for Integrating Environmental Context into EEG-Based Affective Computing"
+
+type: software
+
+authors:
+  - family-names: Poudel
+    given-names: Utsav
+  - family-names: Aryal
+    given-names: Jagannath
+  - family-names: Vairavasundaram
+    given-names: S.
+
+repository-code: https://github.com/r11up/geo-cog
+
+license: MIT
+
+keywords:
+  - affective computing
+  - eeg
+  - geospatial ai
+  - spatial computing
+  - deep learning
+  - machine learning
+  - environmental exposure
+  - neuro-geospatial
+  - multimodal learning
+
+references:
+  - type: article
+    title: "A Neuro-Geospatial Framework for Integrating Environmental Context into EEG-Based Affective Computing"
+
+  - type: dataset
+    authors:
+      - family-names: Poudel
+        given-names: Utsav
+      - family-names: Aryal
+        given-names: Jagannath
+      - family-names: Vairavasundaram
+        given-names: S.
+    title: "Processed Environmental Exposure Grids and Spatial Features for Neuro-Geospatial Integration"
+    year: 2026
+    doi: 10.5281/zenodo.20389601
+    url: https://doi.org/10.5281/zenodo.20389601
