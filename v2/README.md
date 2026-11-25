@@ -32,7 +32,7 @@ v2/
   code/scripts/     entry points (preprocessing, experiments, LaTeX value export)
   code/tests/       pytest suite (synthetic data)
   figures/          draw.io diagrams generated from Python, data graphics
-  kaggle/           GPU runners for the Study 2 deep models
+  kaggle/           GPU runners: Study 2 deep models, vision benchmark, decoding
   requirements.txt
 ```
 
@@ -56,11 +56,16 @@ python -I code/scripts/prep_eav.py                       # grid, features, raw e
 python -I code/scripts/eav_explore.py                    # EEG pipelines, development participants
 python -I code/scripts/eav_benchmark.py --variants logreg_both_pooled hgb_both_pooled
 python -I code/scripts/run_study1_v2.py --protocol cv    # also: lockbox, benchmark
+python -I code/scripts/eav_protocols.py --protocol p2    # published protocols: p2, p3, p4
 
 # Study 2
 python -I code/scripts/prep_eeg.py
 python -I code/scripts/run_linear.py
 python -I code/scripts/run_deep.py                       # GPU; see kaggle/
+python -I code/scripts/decode_environment.py             # decode scene composition from EEG
+python -I code/scripts/export_scene_bundle.py            # images + ratings for kaggle/kernel_vision
+python -I code/scripts/person_level_embeddings.py        # after kernel_vision: unseen people x scenes
+python -I code/scripts/fig_decoding_time.py              # after kaggle/kernel_decode
 
 # Figures and tests
 python figures/graphics/make_assets.py

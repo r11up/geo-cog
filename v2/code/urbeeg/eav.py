@@ -70,7 +70,7 @@ def build(out: Path, n_jobs: int = 3):
 # ---------------------------------------------------------------------------------------
 # v2: adds band-wise covariances, re-centred per participant
 # at that participant's Riemannian mean and mapped to the tangent space (no labels used).
-def subject_features_v2(subject: int):
+def subject_features_v2(subject: int, epoch_s: int = EPOCH_S):
     from pyriemann.estimation import Covariances
     from pyriemann.tangentspace import TangentSpace
 
@@ -83,10 +83,11 @@ def subject_features_v2(subject: int):
     x = x - x.mean(axis=1, keepdims=True)
     sos = butter(4, [1, 45], btype="bandpass", fs=FS_IN, output="sos")
     x = resample_poly(sosfiltfilt(sos, x, axis=-1), 1, FS_IN // FS, axis=-1)
-    n = EPOCH_S * FS
-    ep = np.stack([x[..., i * n:(i + 1) * n] for i in range(N_EPOCHS)], axis=1).reshape(-1, x.shape[1], n)
+    n, n_ep = epoch_s * FS, 20 // epoch_s
+    ep = np.stack([x[..., i * n:(i + 1) * n] for i in range(n_ep)], axis=1).reshape(-1, x.shape[1], n)
     feats, tang = [], []
-    f, p = welch(ep, fs=FS, nperseg=200, noverlap=100, axis=-1)
+    nper = 200 if epoch_s >= 4 else 100
+    f, p = welch(ep, fs=FS, nperseg=nper, noverlap=nper // 2, axis=-1)
     for lo, hi in BANDS:
         xb = sosfiltfilt(butter(4, (lo, hi), btype="bandpass", fs=FS, output="sos"), ep, axis=-1)
         feats.append(0.5 * np.log(2 * np.pi * np.e * xb.var(axis=-1) + 1e-20))
@@ -98,15 +99,15 @@ def subject_features_v2(subject: int):
     X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-8)
     T = np.concatenate(tang, axis=1)
     T = (T - T.mean(axis=0)) / (T.std(axis=0) + 1e-8)
-    y = np.repeat([SPEAKING[lab[t]] for t in trials], N_EPOCHS)
-    trial = np.repeat(trials, N_EPOCHS)
+    y = np.repeat([SPEAKING[lab[t]] for t in trials], n_ep)
+    trial = np.repeat(trials, n_ep)
     return X.astype(np.float32), T.astype(np.float32), y, trial
 
 
-def build_v2(out: Path, n_jobs: int = 6):
+def build_v2(out: Path, n_jobs: int = 6, epoch_s: int = EPOCH_S):
     from joblib import Parallel, delayed
 
-    res = Parallel(n_jobs=n_jobs)(delayed(subject_features_v2)(s) for s in range(1, 43))
+    res = Parallel(n_jobs=n_jobs)(delayed(subject_features_v2)(s, epoch_s) for s in range(1, 43))
     np.savez_compressed(out, X=np.concatenate([r[0] for r in res]), T=np.concatenate([r[1] for r in res]),
                         y=np.concatenate([r[2] for r in res]), trial=np.concatenate([r[3] for r in res]),
                         subject=np.concatenate([np.full(len(r[2]), s) for s, r in zip(range(1, 43), res)]))

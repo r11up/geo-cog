@@ -51,7 +51,7 @@ def texify(s):
     s = str(s).replace("\u2212", "-")
     s = re.sub(r"p < (\d\.\d+)", r"$p<\1$", s)
     s = re.sub(r"p = (\d\.\d+)", r"$p=\1$", s)
-    return re.sub(r"(?<![$\w])-(?=\d)", "$-$", s)
+    return re.sub(r"(?<![$\w-])-(?=\d)", "$-$", s)
 
 
 def fmt_r(row):
@@ -181,6 +181,89 @@ def main():
         for c in ("eeg_only", "prior", "noise", "matched_random"):
             if c in cs.index:
                 define("simple", c, pct(cs.loc[c, "acc"]))
+
+    # ---- Study 1 final runs (new EEG representation; label-free proposed model; PECM ablation)
+    for proto in ("lockbox", "cv", "benchmark"):
+        d = latest(f"study1v2_{proto}_*")
+        if d is None or not (d / "summary.csv").exists():
+            continue
+        for r in pd.read_csv(d / "summary.csv").itertuples():
+            for m in ("acc_trial", "acc_epoch"):
+                v, lo, hi = getattr(r, m), getattr(r, f"{m}_lo"), getattr(r, f"{m}_hi")
+                define("stwo", f"{proto}@{r.condition}@{m}", f"{pct(v)} [{pct(lo)}, {pct(hi)}]")
+                define("stwo", f"{proto}@{r.condition}@{m}m", pct(v))
+            define("stwo", f"{proto}@{r.condition}@f1", f"{r.f1:.3f} [{r.f1_lo:.3f}, {r.f1_hi:.3f}]")
+        if (d / "comparisons.csv").exists():
+            for r in pd.read_csv(d / "comparisons.csv").itertuples():
+                p_ = "p < 0.001" if r.wilcoxon_p < 1e-3 else f"p = {r.wilcoxon_p:.3f}"
+                sign = "+" if r.mean_diff >= 0 else "-"
+                define("stwocmp", f"{proto}@{r.a}@{r.b}@{r.metric}",
+                       f"{sign}{abs(100 * r.mean_diff):.1f} points [{100 * r.lo:.1f}, {100 * r.hi:.1f}], {p_}")
+                define("stwodiff", f"{proto}@{r.a}@{r.b}@{r.metric}",
+                       f"{sign}{abs(100 * r.mean_diff):.1f} [{100 * r.lo:.1f}, {100 * r.hi:.1f}]")
+                define("stwop", f"{proto}@{r.a}@{r.b}@{r.metric}",
+                       "$<0.001$" if r.wilcoxon_p < 1e-3 else f"{r.wilcoxon_p:.3f}")
+    # ---- EAV under published protocols (P2 random trials, P3 LOSO 2 s, P4 random segments)
+    for proto in ("p2", "p3", "p4"):
+        d = latest(f"eav_{proto}_*")
+        if d is None:
+            continue
+        for r in pd.read_csv(d / "summary.csv").itertuples():
+            define("prot", f"{proto}@{r.model}", f"{pct(r.mean)} [{pct(r.lo)}, {pct(r.hi)}]")
+            define("prot", f"{proto}@{r.model}@m", pct(r.mean))
+            define("prot", f"{proto}@{r.model}@lock", pct(r.lockbox_mean))
+            f1 = getattr(r, "f1_macro", np.nan) if proto != "p3" else getattr(r, "f1_weighted", np.nan)
+            if pd.notna(f1):
+                define("prot", f"{proto}@{r.model}@f1", f"{f1:.3f}")
+    # ---- Urban Appraisal: group-level vision benchmark (Tan & Deng protocol)
+    vb = RESULTS / "vision" / "group_benchmark.csv"
+    if vb.exists():
+        for r in pd.read_csv(vb).itertuples():
+            define("vis", r.features, f"{r.mean_r:.3f}")
+            define("vis", f"{r.features}@sd", f"{r.sd_over_partitions:.3f}")
+    # ---- Urban Appraisal: person-level, unseen people x unseen scenes, scene representations
+    d = latest("person_embeddings_*")
+    if d is not None:
+        for r in pd.read_csv(d / "summary.csv").itertuples():
+            define("pemb", f"{r.features}@{r.scale}", f"{r.r:.2f} [{r.lo:.2f}, {r.hi:.2f}]")
+            define("pemb", f"{r.features}@{r.scale}@m", f"{r.r:.2f}")
+    # ---- decoding the viewed environment from EEG
+    d = latest("decode_2*")
+    if d is not None:
+        for r in pd.read_csv(d / "summary.csv").itertuples():
+            fmt = ".3f" if r.metric == "AUC" else ".2f"
+            define("dec", f"{r.features}@{r.task}", f"{format(r.mean, fmt)} [{format(r.lo, fmt)}, {format(r.hi, fmt)}]")
+            define("dec", f"{r.features}@{r.task}@m", format(r.mean, fmt))
+            if pd.notna(getattr(r, "balanced_acc", np.nan)):
+                define("dec", f"{r.features}@{r.task}@bacc", pct(r.balanced_acc))
+
+    # ---- decoding on GPU: time-resolved (Part A), CBraMod linear probe (Part B), deep decoders (Part C)
+    kd = RESULTS / "decode_kaggle"
+    if (kd / "partA_time_resolved.json").exists():
+        a = json.load(open(kd / "partA_time_resolved.json"))
+        for task in ("greenery_code", "built_code"):
+            if task not in a:
+                continue
+            auc = np.array(a[task]["auc_mean"])
+            k = int(auc.argmax())
+            define("kdec", f"{task}@peak", f"{auc[k]:.3f}")
+            define("kdec", f"{task}@peakwin", f"{a['windows_ms'][k][0]}--{a['windows_ms'][k][1]}")
+            for i, c in enumerate(a[task]["clusters"]):
+                w = c["windows"]
+                define("kdec", f"{task}@cl{i + 1}", f"{a['windows_ms'][w[0]][0]}--{a['windows_ms'][w[-1]][1]}")
+                define("kdec", f"{task}@cl{i + 1}p", "$<0.001$" if c["p"] < 1e-3 else f"$= {c['p']:.3f}$")
+    if (kd / "partB_cbramod.json").exists():
+        b = json.load(open(kd / "partB_cbramod.json"))
+        for task, v in b.items():
+            if isinstance(v, dict):
+                fmt = ".3f" if "code" in task else ".2f"
+                define("kdec", f"cbramod@{task}", f"{format(v['mean'], fmt)} [{format(v['lo'], fmt)}, {format(v['hi'], fmt)}]")
+                define("kdec", f"cbramod@{task}@m", format(v["mean"], fmt))
+    if (kd / "partC_deep.json").exists():
+        c = json.load(open(kd / "partC_deep.json"))
+        for model, v in c.items():
+            define("kdec", f"{model}@greenery_code", f"{v['mean']:.3f} [{v['lo']:.3f}, {v['hi']:.3f}]")
+            define("kdec", f"{model}@greenery_code@m", f"{v['mean']:.3f}")
 
     (MS / "results_values.tex").write_text("\n".join(lines) + "\n")
     if table_rows:

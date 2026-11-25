@@ -11,6 +11,11 @@ TITLES = {
     "dev": "Unseen people (subject-independent), 30 development participants",
     "dev-benchmark": "EAV published protocol (per participant: first 70% of trials train, last 30% test), "
                      "30 development participants",
+    "final-lockbox": "FINAL: trained on 30 development participants, tested once on the 12 lockbox participants",
+    "final-cv": "FINAL: subject-level 5-fold x 3 cross-validation, all 42 participants",
+    "final-benchmark": "FINAL: published EAV protocol (chronological 70/30 per participant), all 42",
+    "published-p2": "Protocol of Gong et al. 2026 (LEL): random trials 60/10/30 per participant, 20 s trials, all 42",
+    "published-p3": "Protocol of Lee, Suresh Chandra & Hansen 2026: leave-one-subject-out, 2 s epochs (balanced acc.)",
 }
 
 

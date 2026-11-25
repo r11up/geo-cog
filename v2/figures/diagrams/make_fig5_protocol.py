@@ -40,7 +40,7 @@ d.text(150, 310, 110, 22, "100-cell grid", size=13, color="#444444")
 d.box(272, 240, 104, 66, "OpenStreet-<br>Map (build-<br>ings, roads)", "env", size=14, fill="#EAF3E2")
 d.text(28, 334, 366, 24, "<b>Affective States</b>", size=17)
 d.box(44, 362, 332, 44, "5 EAV classes · 80 epochs per class per subject", "out", size=14, fill="#FCEEE2")
-d.text(28, 414, 366, 34, "Data vectors", size=17)
+d.text(28, 410, 366, 40, "30 for model selection; 12-person<br>lockbox scored once", size=14, color="#444444")
 
 # --- Subject-wise data split
 d.text(430, 46, 250, 56, "<b>SUBJECT-WISE DATA<br>SPLIT (5 FOLDS)</b>", size=17)
@@ -115,14 +115,14 @@ for (ya, yb, lab) in [(Y1, Y2, "CONFIGURATION"), (Y2, Y3, "DATA /<br>COMPONENTS"
 
 groups = [  # (title, sub-column width, [configuration labels], focus)
     ("ISOLATING ALIGNMENT STRATEGY", 250,
-     ["<b>Baseline</b><br>(EEG only)", "<b>Full Multimodal</b><br>(bidirectional)"],
-     ["Focus: Reference for<br>unimodal performance", "Focus: Contribution of<br>probabilistically aligned context"]),
+     ["<b>Baseline</b><br>(EEG only)", "<b>Full Multimodal</b><br>(label-free pairing, proposed)"],
+     ["Focus: Reference for<br>unimodal performance", "Focus: Contribution of an environmental<br>input drawn without the label"]),
     ("ISOLATING ATTENTION DIRECTIONALITY", 216,
      ["<b>Unidirectional Attention</b><br>(EEG queries environment)", "<b>Bidirectional Attention</b><br>(each queries the other)"],
      ["Focus: Direction of cross-modal<br>information flow"]),
-    ("ISOLATING ENVIRONMENTAL CONTENT", 203,
+    ("ISOLATING THE PRIOR (PECM, ORIGINAL DESIGN)", 203,
      ["<b>Pure-Noise<br>Input</b>", "<b>Matched<br>Random Input</b>", "<b>Removed<br>at Test</b>", "<b>Prior<br>Ablations</b>"],
-     ["Focus: Whether any gain needs environmental content,<br>or only an extra structured input"]),
+     ["Focus: Whether the prior's effect needs environmental content,<br>or only an input tied to the label"]),
 ]
 x = RHX + RHW + 8
 cells = []
