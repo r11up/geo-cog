@@ -205,6 +205,14 @@ def main():
                        f"{sign}{abs(100 * r.mean_diff):.1f} [{100 * r.lo:.1f}, {100 * r.hi:.1f}]")
                 define("stwop", f"{proto}@{r.a}@{r.b}@{r.metric}",
                        "$<0.001$" if r.wilcoxon_p < 1e-3 else f"{r.wilcoxon_p:.3f}")
+    # ---- lockbox participants versus development participants within the all-42 cross-validation
+    dcv = latest("study1v2_cv_*")
+    if dcv is not None and (DERIVED / "eav" / "lockbox_subjects.txt").exists():
+        lock = [int(x) for x in (DERIVED / "eav" / "lockbox_subjects.txt").read_text().split()]
+        ps = pd.read_csv(dcv / "per_subject.csv")
+        for cond, g in ps.groupby("condition"):
+            define("lockcv", f"{cond}@lock", pct(g[g.subject.isin(lock)].acc_trial.mean()))
+            define("lockcv", f"{cond}@dev", pct(g[~g.subject.isin(lock)].acc_trial.mean()))
     # ---- EAV under published protocols (P2 random trials, P3 LOSO 2 s, P4 random segments)
     for proto in ("p2", "p3", "p4"):
         d = latest(f"eav_{proto}_*")

@@ -103,14 +103,14 @@ d.box(690, 196, 320, 66, "alignment loss  ‖<i>z</i><sub>EEG</sub> − <i>z</i>
       "(added to cross-entropy, λ = 0.1)", "link", size=12, fill="#F4EFFA", dashed=True)
 
 # ======================= PECM: where the environmental vector comes from
-d.panel(14, 800, 1672, 196, "Where each epoch's environmental vector v<sub>env</sub> comes from (PECM, literature-informed prior)",
+d.panel(14, 800, 1672, 196, "Where each epoch's environmental vector v<sub>env</sub> comes from",
         "link", size=15)
 d.image(40, 838, 186, 156, A / "prior_subsets.png")
-d.box(250, 846, 470, 64, "<b>Training</b>: drawn from the grid cells of the epoch's class<br>"
-      "(upper-quartile exposure for anger and sadness, upper-quartile NDVI<br>for happiness and calm, interquartile cells for neutral)",
+d.box(250, 846, 470, 64, "<b>PECM (original design)</b>, training only: drawn from the grid cells<br>"
+      "of the epoch's class (upper-quartile exposure: anger, sadness;<br>upper-quartile NDVI: happiness, calm; interquartile: neutral)",
       "link", size=12, fill="#FFFFFF", align="left")
-d.box(250, 920, 470, 54, "<b>Validation and test</b>: drawn from all cells, independently of the label,<br>"
-      "so at test time <i>v</i><sub>env</sub> carries no information about the class", "link", size=12, fill="#FFFFFF",
+d.box(250, 920, 470, 54, "<b>Proposed model</b>: drawn from all cells, without the label, in training<br>"
+      "and test; at test, both designs draw without the label", "link", size=12, fill="#FFFFFF",
       align="left")
 d.box(760, 846, 440, 128, "<b>Controls</b> (same model, other inputs)<br>• pure noise, no structure<br>"
       "• matched random: same class means and covariances, no environmental data<br>"

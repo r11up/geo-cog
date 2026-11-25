@@ -236,7 +236,9 @@ try:
           try:
             rng = np.random.default_rng(SEED + 10 * c.p_fold + c.s_fold)
             val_p = set(rng.choice(c.train_participants, 6, replace=False))
-            val_s = set(rng.choice(c.train_scenes, 6, replace=False))
+            cls = {s: y_scene["greenery_code"][S_IDX[s]] for s in c.train_scenes}   # both classes in validation
+            val_s = set(rng.choice([s for s in c.train_scenes if cls[s] == 1], 3, replace=False)) | \
+                set(rng.choice([s for s in c.train_scenes if cls[s] == 0], 3, replace=False))
 
             def gather(people, scs):
                 X, Y, own = [], [], []

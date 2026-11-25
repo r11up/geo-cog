@@ -32,7 +32,7 @@ label(166, 330, 220, "Astana, 100 cells of 1 km²<br>Sentinel-2 + OpenStreetMap"
 d.box(540, 70, 380, 300, "", "link", fill="#F4EFFA")
 label(550, 76, 360, "<b>No shared place or time</b>", 14, PURPLE, h=26)
 d.image(566, 104, 170, 150, A / "prior_subsets.png")
-label(740, 110, 170, "each epoch gets a grid vector drawn by its <b>emotion label</b> (training only)", 12, h=110,
+label(740, 104, 172, "each epoch gets a grid vector: drawn by its <b>emotion label</b> in PECM (original, training only), or <b>without the label</b> in the proposed model", 12, h=150,
       align="left")
 label(556, 262, 350, "literature-informed prior (PECM):<br>environment assigned, not measured.<br>"
       "Support mismatch: one person's EEG vs a 1 km² city cell", 12, h=70)
@@ -65,12 +65,12 @@ d.arrow(pts=[(726, 534), (780, 534)], color=GREEN, width=2.5)
 d.image(786, 490, 110, 64, A / "eeg_traces.png")
 label(556, 606, 350, "the environment of every EEG epoch is the<br>scene in view; 9 ratings per scene and person.<br>"
       "Common support: the viewed scene", 12, h=70)
-d.box(960, 458, 330, 250, "<b>Scene composition</b> (ridge)<br><br><b>EEG</b>: ERPs, Riemannian, EEGNet,<br>"
-      "EEG-Conformer<br><br><b>Fusion</b>: stacking; dual tower with<br>token-level cross-attention", "grey", size=12,
+d.box(960, 458, 330, 250, "<b>Scene</b>: composition; image models<br>(SigLIP, CLIP, DINOv2)<br><br><b>EEG</b>: ERPs, Riemannian, EEGNet,<br>"
+      "EEG-Conformer, CBraMod<br><br><b>Fusion</b>: stacking; dual tower with<br>token-level cross-attention", "grey", size=12,
       fill="#FFFFFF")
 d.box(1330, 458, 336, 250, "<b>Unseen people × unseen scenes</b><br>(crossed 5 × 4 folds)<br><br>"
       "<b>Controls</b>: noise and shuffled scenes,<br>low-level image statistics, shuffled EEG<br><br>"
-      "<b>Personal deviation</b> from the scene<br>consensus", "grey", size=12, fill="#FFFFFF")
+      "<b>Personal deviation</b> from the consensus<br><br><b>Decoding</b> the scene's greenery from EEG", "grey", size=12, fill="#FFFFFF")
 
 for y, col in ((220, BLUE), (584, GREEN)):
     d.arrow(pts=[(392, y), (536, y)], color=col, width=3)
