@@ -136,6 +136,7 @@ def main():
         for r in summ.itertuples():
             define("sone", f"{r.condition}@acc", f"{pct(r.acc)} [{pct(r.acc_lo)}, {pct(r.acc_hi)}]")
             define("sone", f"{r.condition}@f1", f"{r.f1:.3f} [{r.f1_lo:.3f}, {r.f1_hi:.3f}]")
+            define("sone", f"{r.condition}@f1m", f"{r.f1:.3f}")
             define("sone", f"{r.condition}@accm", pct(r.acc))
         comp = pd.read_csv(d / "comparisons.csv")
         for r in comp.itertuples():
@@ -193,6 +194,7 @@ def main():
                 define("stwo", f"{proto}@{r.condition}@{m}", f"{pct(v)} [{pct(lo)}, {pct(hi)}]")
                 define("stwo", f"{proto}@{r.condition}@{m}m", pct(v))
             define("stwo", f"{proto}@{r.condition}@f1", f"{r.f1:.3f} [{r.f1_lo:.3f}, {r.f1_hi:.3f}]")
+            define("stwo", f"{proto}@{r.condition}@f1m", f"{r.f1:.3f}")
         if (d / "comparisons.csv").exists():
             for r in pd.read_csv(d / "comparisons.csv").itertuples():
                 p_ = "p < 0.001" if r.wilcoxon_p < 1e-3 else f"p = {r.wilcoxon_p:.3f}"
@@ -237,6 +239,12 @@ def main():
             if pd.notna(getattr(r, "balanced_acc", np.nan)):
                 define("dec", f"{r.features}@{r.task}@bacc", pct(r.balanced_acc))
 
+    # ---- decoding protocol-leakage analysis
+    d = latest("decode_leakage_*")
+    if d is not None:
+        for r in pd.read_csv(d / "summary.csv").itertuples():
+            define("dleak", r.protocol, f"{r.auc:.3f}")
+            define("dleak", f"{r.protocol}@ci", f"{r.auc:.3f} [{r.lo:.3f}, {r.hi:.3f}]")
     # ---- decoding on GPU: time-resolved (Part A), CBraMod linear probe (Part B), deep decoders (Part C)
     kd = RESULTS / "decode_kaggle"
     if (kd / "partA_time_resolved.json").exists():

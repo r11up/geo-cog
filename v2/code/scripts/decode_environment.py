@@ -92,6 +92,37 @@ def run_cell(cell, X, data, task, seed):
                          "score": score})
 
 
+def leak_cells(data, protocol, seed):
+    """Splits for the protocol-leakage analysis: 'people' (people held out, all scenes seen),
+    'scenes' (scenes held out, all people seen), 'pairs' (person x scene pairs at random)."""
+    from types import SimpleNamespace
+    part, stim = data["participant"], data["stimulus"]
+    people, scenes = sorted(set(part)), sorted(set(stim))
+    out = []
+    for rep in range(3):
+        rng = np.random.default_rng(seed + rep)
+        if protocol == "people":
+            folds = np.array_split(rng.permutation(people), 5)
+            out += [SimpleNamespace(rep=rep, tr=~np.isin(part, f), te=np.isin(part, f)) for f in folds]
+        elif protocol == "scenes":                    # stratified by stimulus code, as in the crossed design
+            from urbeeg.splits import scene_folds
+            strata = data["scene"][["code_HT", "code_HB"]].astype(str).agg("".join, axis=1).to_dict()
+            folds = scene_folds(scenes, strata, 4, rng)
+            out += [SimpleNamespace(rep=rep, tr=~np.isin(stim, f), te=np.isin(stim, f)) for f in folds]
+        else:
+            fold = rng.integers(0, 5, len(part))
+            out += [SimpleNamespace(rep=rep, tr=fold != k, te=fold == k) for k in range(5)]
+    return out
+
+
+def run_leak(cell, X, data):
+    y = data["scene"]["code_HT"].astype(float).reindex(data["stimulus"]).to_numpy()
+    sc = StandardScaler().fit(X[cell.tr])
+    m = LogisticRegression(C=0.01, max_iter=3000).fit(sc.transform(X[cell.tr]), y[cell.tr].astype(int))
+    return pd.DataFrame({"rep": cell.rep, "participant": data["participant"][cell.te], "y": y[cell.te],
+                         "score": m.decision_function(sc.transform(X[cell.te]))})
+
+
 def per_person(df, kind):
     rows = []
     for (rep, p), g in df.groupby(["rep", "participant"]):
@@ -109,6 +140,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--jobs", type=int, default=6)
     ap.add_argument("--features", nargs="+", default=["erp_windows", "covariance", "erp_plus_cov"])
+    ap.add_argument("--leakage", action="store_true", help="protocol-leakage analysis (ERP windows, HT vs LT)")
     args = ap.parse_args()
     t0 = time.time()
     subs = processed_participants()
@@ -119,6 +151,23 @@ def main():
     feats = {"erp_windows": zscore_per_person(data["erp_win"], people),
              "covariance": zscore_per_person(tangent_per_person(data["cov"], people), people)}
     feats["erp_plus_cov"] = np.hstack([feats["erp_windows"], feats["covariance"]])
+    if args.leakage:
+        X = zscore_per_person(data["erp_win"], people)
+        rows = []
+        for proto in ("people", "scenes", "pairs"):
+            parts = Parallel(n_jobs=args.jobs)(delayed(run_leak)(c, X, data) for c in leak_cells(data, proto, SEED))
+            pp = per_person(pd.concat(parts, ignore_index=True), "binary")
+            v = pp["value"].dropna().to_numpy()
+            b = np.random.default_rng(SEED).choice(v, size=(2000, len(v))).mean(1)
+            rows.append({"protocol": proto, "auc": v.mean(), "lo": np.percentile(b, 2.5), "hi": np.percentile(b, 97.5),
+                         "balanced_acc": pp["bacc"].mean()})
+            print(f"{proto:7s} AUC = {v.mean():.3f} [{rows[-1]['lo']:.3f}, {rows[-1]['hi']:.3f}], "
+                  f"bal. acc. {100 * pp['bacc'].mean():.1f}%", flush=True)
+        out = RESULTS / f"decode_leakage_{datetime.now():%Y%m%d_%H%M}"
+        out.mkdir(parents=True)
+        pd.DataFrame(rows).to_csv(out / "summary.csv", index=False)
+        print("saved", out)
+        return
     scenes = sorted(data["scene"].index)
     strata = data["scene"][["code_HT", "code_HB"]].astype(str).agg("".join, axis=1).to_dict()
     cells = crossed_cells(subs, scenes, strata, n_p=5, n_s=4, n_rep=3, seed=SEED)
