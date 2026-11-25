@@ -1,5 +1,8 @@
 # Neuro-Geospatial Affective Computing 
 
+> **Version 2 (2026 revision).** The code for the revised manuscript is in [`v2/`](v2/README.md). Everything below describes version 1, the code of the original submission, which is kept unchanged.
+
+
 This repository contains the code for the paper "A Neuro-Geospatial Framework for Integrating Environmental Context into EEG-Based Affective Computing".
 
 ---
