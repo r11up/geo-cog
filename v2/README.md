@@ -24,6 +24,12 @@ ICLabel), scene composition from semantic segmentation, low-level image statisti
 (ERP, Riemannian, stacking), deep models (EEGNet, EEG-Conformer, a dual tower with token-level
 cross-attention) and controls, evaluated on unseen people x unseen scenes with crossed folds.
 
+## Reproducing and the analysis plan
+
+`REPRODUCE.md` maps every table, figure and number of the manuscript to the script or Kaggle kernel that
+produces it, in the order to run them. `ANALYSIS-PLAN.md` lists the analysis decisions with the date and time
+each was recorded and whether it was made before the analysis it governs.
+
 ## Layout
 
 ```
@@ -60,6 +66,8 @@ python -I code/scripts/eav_protocols.py --protocol p2    # published protocols: 
 python -I code/scripts/eav_newmethods.py --protocol p1   # further methods on the published splits (p1, p2, p3);
                                                          # the reported one is chosen on validation data
 python -I code/scripts/eav_cbramod.py --protocol p1      # EEG foundation model CBraMod (p1 fine-tuned, p3 frozen)
+python -I code/scripts/eav_round5.py --protocol p1       # further methods (p1, p3); selection across rounds
+python -I code/scripts/equivalence_tests.py              # equivalence of the Study 1 primary comparisons
 
 # Study 2
 python -I code/scripts/prep_eeg.py
@@ -71,6 +79,8 @@ python -I code/scripts/person_level_embeddings.py        # after kernel_vision: 
 # kaggle/kernel_vision3: larger encoders, mirrored-image averaging and language-anchored features
 # for the group-level appraisal benchmark (pre-specified equal-weight ensemble)
 python -I code/scripts/fig_decoding_time.py              # after kaggle/kernel_decode
+python -I code/scripts/holm_primary.py                   # Holm adjustment of the nine primary correlations
+python -I code/scripts/fig_compare.py                    # comparison with published results (after make_results_tex)
 
 # Figures and tests
 python figures/graphics/make_assets.py

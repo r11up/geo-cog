@@ -53,7 +53,8 @@ ALLB = sorted(set(BANDS5) | set(BANDS7))
 CS = (1e-5, 3e-5, 1e-4, 3e-4, 1e-3, 1e-2)
 CANDIDATES = {"p1": ["base", "align", "fb7", "crops", "ens", "all"],
               "p2": ["base", "fb7", "crops", "ens", "all"],
-              "p3": ["base", "fb7", "crops", "ens", "all"]}
+              "p3": ["base", "fb7", "crops", "ens", "all"],
+              "p5": ["base", "fb7", "ens"]}
 
 
 def parts_of(name, protocol):
@@ -243,6 +244,39 @@ def run_p2(W, meta, name, win, jobs):
     return pd.concat(out), float(np.mean(sel))
 
 
+def p5_split(meta, seed):
+    """Per participant and class: half of the 5 s segments for testing; 30% of the rest for validation."""
+    rng = np.random.default_rng(seed)
+    tr, va, te = [], [], []
+    for s in np.unique(meta["subject"]):
+        for k in np.unique(meta["y"]):
+            idx = rng.permutation(np.where(meta["std"] & (meta["subject"] == s) & (meta["y"] == k))[0])
+            n_te = len(idx) // 2
+            rest = idx[n_te:]
+            n_va = int(round(0.3 * len(rest)))
+            te.extend(idx[:n_te]); va.extend(rest[:n_va]); tr.extend(rest[n_va:])
+    return np.array(tr), np.array(va), np.array(te)
+
+
+def run_p5(W, meta, name, win, jobs):
+    """Malallah & Iqbal 2025: per participant, random 50/50 split of the 5 s segments, eight assignments."""
+    c = parts_of(name, "p5")
+    bands = BANDS7 if c["fb7"] else BANDS5
+    F = features(W, meta, bands, meta["subject"])
+    sub, y = meta["subject"], meta["y"]
+    out, sel = [], []
+    for rep in range(8):
+        tr0, va0, te0 = p5_split(meta, SEED + 100 + rep)
+        jobs_in = [(tr0[sub[tr0] == s], va0[sub[va0] == s], te0[sub[te0] == s]) for s in np.unique(sub)]
+        parts = Parallel(n_jobs=jobs)(delayed(_p2_one)(F, y, tr, va, te, c["ens"]) for tr, va, te in jobs_in)
+        va = np.concatenate([p[0] for p in parts]); Pva = np.concatenate([p[1] for p in parts])
+        te = np.concatenate([p[2] for p in parts]); Pte = np.concatenate([p[3] for p in parts])
+        out.append(per_subject_epoch_scores(meta, te, Pte, win).assign(model=name, rep=rep))
+        sel.append(per_subject_epoch_scores(meta, va, Pva, win).acc_epoch.mean())
+        print(f"  {name} rep {rep}: test segment acc {100 * out[-1].acc_epoch.mean():.1f}%", flush=True)
+    return pd.concat(out), float(np.mean(sel))
+
+
 def run_p3(W, meta, name, win, jobs):
     c = parts_of(name, "p3")
     bands = BANDS7 if c["fb7"] else BANDS5
@@ -265,25 +299,37 @@ def run_p3(W, meta, name, win, jobs):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--protocol", choices=["p1", "p2", "p3"], required=True)
+    ap.add_argument("--protocol", choices=["p1", "p2", "p3", "p5"], required=True)
     ap.add_argument("--candidates", nargs="+", default=None)
     ap.add_argument("--jobs", type=int, default=3)
+    ap.add_argument("--resume", default=None, help="results folder of a stopped run; its finished candidates are kept")
     args = ap.parse_args()
     win = 200 if args.protocol == "p3" else 500
     t0 = time.time()
     W, meta = load_windows(win, args.jobs)
     print(f"windows ready: {len(meta['y'])} ({time.time() - t0:.0f} s)", flush=True)
-    out = RESULTS / f"eav_new_{args.protocol}_{datetime.now():%Y%m%d_%H%M}"
-    out.mkdir(parents=True)
-    metric = {"p1": "acc_epoch", "p2": "acc_trial", "p3": "bal_acc"}[args.protocol]
+    if args.resume:
+        out = Path(args.resume)
+        summ = pd.read_csv(out / "summary.csv").drop(columns="selected", errors="ignore").to_dict("records")
+        allres = [pd.read_csv(out / "per_subject.csv")]
+    else:
+        out = RESULTS / f"eav_new_{args.protocol}_{datetime.now():%Y%m%d_%H%M}"
+        out.mkdir(parents=True)
+        summ, allres = [], []
+    finished = {r["candidate"] for r in summ}
+    metric = {"p1": "acc_epoch", "p2": "acc_trial", "p3": "bal_acc", "p5": "acc_epoch"}[args.protocol]
     rng = np.random.default_rng(SEED)
-    summ, allres = [], []
     for name in args.candidates or CANDIDATES[args.protocol]:
+        if name in finished:
+            print(f"{name}: kept from {out.name}", flush=True)
+            continue
         t1 = time.time()
         if args.protocol == "p1":
             res, vscore = run_p1(W, meta, name, win)
         elif args.protocol == "p2":
             res, vscore = run_p2(W, meta, name, win, args.jobs)
+        elif args.protocol == "p5":
+            res, vscore = run_p5(W, meta, name, win, args.jobs)
         else:
             res, vscore = run_p3(W, meta, name, win, args.jobs)
         allres.append(res)

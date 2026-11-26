@@ -1,0 +1,13 @@
+{
+  "id": "utsavghhjg/geocog-eav-r5p3",
+  "title": "geocog-eav-r5p3",
+  "code_file": "run.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_internet": true,
+  "dataset_sources": ["utsavghhjg/eav-epochs-private", "utsavghhjg/geocog-code"],
+  "competition_sources": [],
+  "kernel_sources": []
+}

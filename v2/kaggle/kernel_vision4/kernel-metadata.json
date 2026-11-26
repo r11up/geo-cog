@@ -1,0 +1,13 @@
+{
+  "id": "utsavghhjg/geocog-vision4",
+  "title": "geocog-vision4",
+  "code_file": "run.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": ["utsavghhjg/urban-appraisal-scenes"],
+  "competition_sources": [],
+  "kernel_sources": []
+}
