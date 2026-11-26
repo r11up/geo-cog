@@ -94,3 +94,22 @@ are frozen on 1 December 2026; anything added after that date will be marked as 
 - **15:12, before computing.** Descriptive panel for the scene-composition figure: Spearman correlations over
   the 56 scenes between the five composition shares and the scene means of the nine rating scales (62
   participants). Descriptive only; no tests and nothing selected on it.
+- **21:57, before running (round 6).** Study 1 fusion-operator controls on the same cross-validation folds,
+  seeds and per-fold hyperparameters: single-direction cross-attention with a residual path, concatenation
+  fusion, token-level cross-attention between the 31 EEG tokens and the 100 grid-node tokens in both directions
+  and in one direction, the token-level model with pure-noise input, and the PECM prior and its matched-random
+  control under concatenation and token-level fusion. Random Forest, LSTM and environment-only baselines re-run
+  on the same folds and features with trial accuracy. Parameter counts reported. Holm adjustment over the
+  paired comparisons of the ablation table. Urban Appraisal: the prior's directional assumptions tested on
+  the co-registered ratings (greenery share and a built exposure score against valence and stress; per-person
+  Spearman, Wilcoxon, Holm over four tests; the prior's quartile rule applied to the 56 scenes as a secondary
+  check); a variance partition of appraisal prediction into composition, low-level statistics and shared
+  parts; greenery residualised on low-level statistics; greenery share against the HT/LT design code. Images:
+  grayscale and phase-scrambled controls for four encoders under the Tan and Deng protocol; two further
+  segmentation models (Mask2Former trained on ADE20K and on Cityscapes) and a SegFormer-B5 re-run, compared
+  with the released segmentation. Everything reported whatever the result.
+- **22:15, before running (round 6 amendment).** Scene-level bootstrap of the image benchmark: out-of-fold
+  predictions recomputed from the saved embeddings of the first round and of round v5, then 2,000 resamples of
+  the 55 scenes with the predictions held fixed; intervals for the reproduction sets, the v5 readout of the
+  same encoders, both pre-specified ensembles and the composition sets, and paired differences against the
+  reproduction of the same encoder. 22:21: extended to the round-3 and round-4 pre-specified ensembles.

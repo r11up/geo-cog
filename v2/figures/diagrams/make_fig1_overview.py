@@ -27,7 +27,7 @@ def row_arrows(y, color):
 
 # ======================= Study 1: EAV
 d.panel(8, 44, 936, 282, "", "neural")
-text(18, 48, 700, 28, "<b>Study 1 · EAV</b>&nbsp;&nbsp;re-analysis of the original design", T, "#2F5E8E", "left")
+text(18, 48, 700, 28, "<b>Study 1 · EAV</b>&nbsp;&nbsp;test of a literature-informed prior", T, "#2F5E8E", "left")
 d.image(22, 82, 62, 62, A / "lab_person.svg")
 d.image(88, 82, 62, 62, A / "eeg_head.png")
 text(150, 84, 82, 60, "42 people<br>30-ch EEG", S, align="left")
@@ -40,14 +40,14 @@ d.box(250, 80, 230, 236, "", "link", fill="#F4EFFA")
 text(250, 84, 230, 26, "<b>No shared place or time</b>", B, PURPLE)
 d.image(296, 110, 138, 117, A / "prior_subsets.png")
 text(256, 230, 218, 80, "each epoch gets a grid vector drawn by its <b>emotion label</b> (PECM, training) "
-     "or <b>without the label</b> (proposed)", S)
+     "or <b>without the label</b> (label-free reference)", S)
 d.box(502, 80, 210, 236, "", "grey", fill="#FFFFFF")
 d.box(514, 96, 84, 58, "EEG<br>tower", "neural", size=B, fill="#A9C8EA")
 d.box(616, 96, 84, 58, "graph<br>tower", "env", size=B, fill="#BFD9AE")
 d.arrow(pts=[(600, 114), (614, 114)], color=INK, width=2)
 d.arrow(pts=[(614, 138), (600, 138)], color=INK, width=2)
 text(508, 160, 198, 46, "bidirectional attention<br>→ 5 emotions", B)
-text(508, 210, 198, 60, "+ tangent-space covariance features (this revision)", S, MUTED)
+text(508, 210, 198, 60, "+ tangent-space covariance features", S, MUTED)
 text(508, 276, 198, 30, "(Figure 3)", S, MUTED)
 d.box(734, 80, 200, 236, "", "grey", fill="#FFFFFF")
 for i, name in enumerate(CLS):

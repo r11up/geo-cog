@@ -27,8 +27,10 @@ through the Microsoft Planetary Computer and OpenStreetMap through Overpass; no 
 | Reference pipeline under P1 | `python -I code/scripts/run_study1_v2.py --protocol benchmark` | `study1v2_benchmark_*` |
 | Prior quantile and bandwidth sensitivity | `python -I code/scripts/run_contrast.py` | `contrast_*` |
 | Equivalence tests (margin +/-3 points) | `python -I code/scripts/equivalence_tests.py` | `equivalence_*` |
+| Table 5 (fusion operators, parameter counts) and the Random Forest, LSTM and environment-only rows of Table 2 | `python -I code/scripts/run_study1_fusion.py` after the cross-validation run (same folds, seeds and per-fold hyperparameters; uses a GPU if there is one; also `kaggle/kernel_study1_fusion` with the features in a private dataset) | `study1fusion_cv_*` |
+| Holm adjustment over the comparisons of Tables 4 and 5 | `python -I code/scripts/make_results_tex.py` | `study1fusion_cv_*/comparisons_with_reference.csv` |
 
-## 3. Table 5 and Figure 7: published protocols and our methods
+## 3. Table 6 and Figure 7: published protocols and our methods
 
 | Row | Command | Results folder |
 |---|---|---|
@@ -37,6 +39,7 @@ through the Microsoft Planetary Computer and OpenStreetMap through Overpass; no 
 | EEG foundation model CBraMod under P1 and P3 | `python -I code/scripts/eav_cbramod.py --protocol p1` (also `p3`) | `eav_cbramod_p*_*` |
 | Further methods (longer CBraMod schedule, per-participant models, self-training, weighting) | `python -I code/scripts/eav_round5.py --protocol p1` (also `p3`) | `eav_round5_p*_*` |
 | Image models, group means (Tan & Deng protocol) | Kaggle kernels `kaggle/kernel_vision`, `kernel_vision3`, `kernel_vision4`, `kernel_vision5` | `vision*/group_benchmark*.csv` |
+| Scene-level bootstrap of the group-mean results and paired differences from the reproduced published models | Kaggle kernel `kaggle/kernel_vision_stats` (reads the outputs of the image kernels) | `vision_stats/scene_bootstrap.csv` |
 | Figure 7 | `python -I code/scripts/fig_compare.py` (reads `results/table5_forest.csv`, written by `make_results_tex.py`) | `manuscript/figures/fig_compare.pdf` |
 
 The method shown for each published protocol is the candidate with the best validation score across all
@@ -48,13 +51,15 @@ preprocessed epochs in a private dataset.
 
 | Paper item | Command | Results folder |
 |---|---|---|
-| Table 6, Table 7 (linear models, controls) | `python -I code/scripts/run_linear.py` | `linear_*` |
-| Table 6, Table 7 (deep models) | `python -I code/scripts/run_deep.py` (GPU; `kaggle/kernel_dualtower`, `kernel_eegnets`) | `deep/` |
+| Table 7, Table 8 (linear models, controls) | `python -I code/scripts/run_linear.py` | `linear_*` |
+| Table 7, Table 8 (deep models) | `python -I code/scripts/run_deep.py` (GPU; `kaggle/kernel_dualtower`, `kernel_eegnets`) | `deep/` |
 | Holm adjustment of the nine primary correlations | `python -I code/scripts/holm_primary.py` | `holm_*` |
 | Person-level prediction from image models | `python -I code/scripts/person_level_embeddings.py` (after `kernel_vision`) | `person_embeddings_*` |
 | Decoding greenery and built form from EEG | `python -I code/scripts/decode_environment.py` (and `--leakage`) | `decode_*`, `decode_leakage_*` |
 | Time-resolved decoding, frozen CBraMod, EEGNet, EEG-Conformer | Kaggle kernel `kaggle/kernel_decode` | `decode_kaggle/` |
 | Fine-tuned CBraMod decoding | Kaggle kernel `kaggle/kernel_decode_cbramod` | `decode_kaggle/partD_cbramod_ft.json` |
+| Grayscale and phase-scrambled image controls; Mask2Former (ADE20K, Cityscapes) and SegFormer-B5 segmentations | Kaggle kernel `kaggle/kernel_vision6` | `vision6/` |
+| Tests of the prior's assumptions, variance partition, residual greenery, design-code check | `python -I code/scripts/prior_validity.py --shares results/vision6/segmentation_shares_v6.csv` | `priorvalidity_*` |
 
 ## 5. Figures
 

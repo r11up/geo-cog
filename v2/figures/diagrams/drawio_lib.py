@@ -41,8 +41,8 @@ class Diagram:
         return self._vertex(title, style, x, y, w, h)
 
     def arrow(self, src=None, dst=None, pts=None, color="#333333", width=2, dashed=False,
-              exit=None, entry=None, label="", end="block", label_bg="#FFFFFF", via=None):
-        style = (f"edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow={end};endFill=1;"
+              exit=None, entry=None, label="", end="block", label_bg="#FFFFFF", via=None, straight=False):
+        style = (f"edgeStyle={'none' if straight else 'orthogonalEdgeStyle'};rounded=0;html=1;endArrow={end};endFill=1;"
                  f"labelBackgroundColor={label_bg};"
                  f"strokeColor={color};strokeWidth={width};{FONT}fontSize=11;" + ("dashed=1;" if dashed else ""))
         if exit:

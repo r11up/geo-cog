@@ -72,11 +72,11 @@ d.arrow(pts=[(774, 301), (774, 316)], color=GREEN, width=3)
 d.box(628, 318, 292, 158, "", "link", fill="#F7F3FB")
 label(628, 321, 292, "<b>Each epoch's <i>v</i><sub>env</sub></b>", 17, h=24)
 d.text(636, 346, 280, 128,
-       "<b>PECM</b> (original), training only, by label:<br>"
+       "<b>PECM</b> (under test), training only, by label:<br>"
        f"<font color='{ORANGE}'>●</font> anger, sadness: exposure, top quartile<br>"
        f"<font color='{GREEN}'>●</font> happiness, calm: NDVI, top quartile<br>"
        "<font color='#8C8C8C'>●</font> neutral: interquartile of both<br>"
-       "<b>Proposed</b>: all cells, without the label<br>"
+       "<b>Label-free</b>: all cells, without the label<br>"
        "<b>At test</b>: always without the label;<br>with it only in a diagnostic run", size=XS, align="left")
 d.arrow(pts=[(774, 478), (774, TOWER_Y - 4)], color=GREEN, width=3)
 d.box(628, TOWER_Y, 292, 118, "", "env", fill="#F4F9F0")
@@ -116,7 +116,7 @@ for i, (name, short) in enumerate(CLS):
 label(332, 488, 270, "<b>five affective states</b>", S, h=24)
 d.box(342, 526, 250, 158, "<b>Controls</b> (same model, other <i>v</i><sub>env</sub>)<br>• pure noise<br>"
       "• matched random: class means and covariances, no environmental data<br>"
-      "• removed at test (grid mean)<br>• random pairing; shuffled labels; reversed prior",
+      "• removed at test (grid mean)<br>• label-free pairing; shuffled labels; reversed prior",
       "link", size=XS, fill="#FFFFFF", align="left")
 d.save("fig3_architecture.drawio")
 print("wrote fig3_architecture.drawio")

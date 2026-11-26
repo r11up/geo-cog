@@ -399,34 +399,187 @@ def main():
             define("kdec", f"{model}@greenery_code", f"{v['mean']:.3f} [{v['lo']:.3f}, {v['hi']:.3f}]")
             define("kdec", f"{model}@greenery_code@m", f"{v['mean']:.3f}")
 
+    # ---- round 6 (declared 26 Nov 2026, 21:57): Study 1 fusion operators and baselines (Kaggle GPU)
+    dfu, dcv2 = latest("study1fusion_cv_*"), latest("study1v2_cv_*")
+    if dfu is not None and (dfu / "summary.csv").exists() and dcv2 is not None:
+        for r in pd.read_csv(dfu / "summary.csv").itertuples():
+            for m in ("acc_trial", "acc_epoch"):
+                v, lo, hi = getattr(r, m), getattr(r, f"{m}_lo"), getattr(r, f"{m}_hi")
+                define("stwo", f"cv@{r.condition}@{m}", f"{pct(v)} [{pct(lo)}, {pct(hi)}]")
+                define("stwo", f"cv@{r.condition}@{m}m", pct(v))
+            define("stwo", f"cv@{r.condition}@f1", f"{r.f1:.3f} [{r.f1_lo:.3f}, {r.f1_hi:.3f}]")
+            define("stwo", f"cv@{r.condition}@f1m", f"{r.f1:.3f}")
+        cfg = json.load(open(dfu / "config.json"))
+        for mode, n in cfg["n_params"].items():
+            define("params", mode, f"{n / 1e6:.2f}")
+        define("val", "fusiongpu", cfg.get("gpu", "").replace("Tesla ", "NVIDIA Tesla "))
+        # paired comparisons: saved ones first (same values everywhere), missing ones computed here
+        comps = pd.concat([pd.read_csv(dcv2 / "comparisons.csv"), pd.read_csv(dfu / "comparisons.csv")],
+                          ignore_index=True).drop_duplicates(["metric", "a", "b"])
+        ps = pd.concat([pd.read_csv(dcv2 / "per_subject.csv"), pd.read_csv(dfu / "per_subject.csv")], ignore_index=True)
+        TABLE4 = [("pecm", "pecm_matched_random"), ("pecm", "pecm_reversed"), ("pecm", "pecm_shuffled_labels"),
+                  ("pecm", "pecm_removed_at_test"), ("proposed", "proposed_noise"), ("proposed", "eeg_tower")]
+        FUSIONT = [("proposed_uni", "eeg_tower"), ("proposed_uni_res", "eeg_tower"), ("proposed_concat", "eeg_tower"),
+                   ("proposed_tok_bi", "eeg_tower"), ("proposed_tok_uni", "eeg_tower"),
+                   ("proposed_tok_bi_noise", "eeg_tower"), ("pecm_concat", "pecm_matched_random_concat"),
+                   ("pecm_tok_bi", "pecm_matched_random_tok_bi")]
+        rng6 = np.random.default_rng(0)
+        from scipy.stats import wilcoxon as _wilcoxon
+        from urbeeg import tracker as _tracker
+        for a, b in TABLE4 + FUSIONT + [("proposed_tok_bi", "proposed_tok_bi_noise"), ("proposed_tok_bi", "proposed"),
+                                        ("pecm_concat", "eeg_tower"), ("pecm_tok_bi", "eeg_tower")]:
+            for m in ("acc_trial", "acc_epoch"):
+                if ((comps.a == a) & (comps.b == b) & (comps.metric == m)).any():
+                    continue
+                piv = ps.pivot(index="subject", columns="condition", values=m)
+                if a in piv and b in piv:
+                    d_ = (piv[a] - piv[b]).dropna().to_numpy()
+                    lo, hi = _tracker.boot_ci(d_, rng6)
+                    comps.loc[len(comps)] = {"metric": m, "a": a, "b": b, "mean_diff": d_.mean(), "lo": lo, "hi": hi,
+                                             "wilcoxon_p": _wilcoxon(d_).pvalue if np.any(d_ != 0) else np.nan}
+        for r in comps.itertuples():
+            p_ = "p < 0.001" if r.wilcoxon_p < 1e-3 else f"p = {r.wilcoxon_p:.3f}"
+            sign = "+" if r.mean_diff >= 0 else "-"
+            define("stwocmp", f"cv@{r.a}@{r.b}@{r.metric}",
+                   f"{sign}{abs(100 * r.mean_diff):.1f} points [{100 * r.lo:.1f}, {100 * r.hi:.1f}], {p_}")
+            define("stwodiff", f"cv@{r.a}@{r.b}@{r.metric}",
+                   f"{sign}{abs(100 * r.mean_diff):.1f} [{100 * r.lo:.1f}, {100 * r.hi:.1f}]")
+            define("stwop", f"cv@{r.a}@{r.b}@{r.metric}", "$<0.001$" if r.wilcoxon_p < 1e-3 else f"{r.wilcoxon_p:.3f}")
+        # Holm over every paired comparison of the ablation and fusion tables (trial accuracy)
+        fam = comps[(comps.metric == "acc_trial") & comps.apply(lambda r: (r.a, r.b) in TABLE4 + FUSIONT, axis=1)]
+        p = fam.wilcoxon_p.to_numpy()
+        order, run_, adj = np.argsort(p), 0.0, np.empty(len(p))
+        for k, i in enumerate(order):
+            run_ = max(run_, (len(p) - k) * p[i])
+            adj[i] = min(1.0, run_)
+        for (a, b), v in zip(zip(fam.a, fam.b), adj):
+            define("stwoph", f"cv@{a}@{b}@acc_trial", "$<0.001$" if v < 1e-3 else f"{v:.3f}")
+        define("val", "holmfamily", str(len(fam)))
+        comps.to_csv(dfu / "comparisons_with_reference.csv", index=False)
+        # split-wise paired differences (trial accuracy per test fold, all test participants of the fold)
+        P = pd.concat([pd.read_csv(dcv2 / "predictions.csv.gz"), pd.read_csv(dfu / "predictions.csv.gz")],
+                      ignore_index=True)
+        P["p"] = [np.array(json.loads(x)) for x in P.p]
+        rows = []
+        for (c, rep, fold), g in P.groupby(["condition", "rep", "fold"]):
+            hits = [np.stack(t.p.to_numpy()).mean(0).argmax() == t.y.iloc[0]
+                    for _, t in g.groupby(["subject", "trial"])]
+            rows.append({"condition": c, "rep": rep, "fold": fold, "acc_trial": np.mean(hits)})
+        F = pd.DataFrame(rows).pivot_table(index=["rep", "fold"], columns="condition", values="acc_trial")
+        F.to_csv(dfu / "per_fold_trial_accuracy.csv")
+        for a, b in [("proposed", "eeg_tower"), ("pecm", "pecm_matched_random"), ("pecm", "eeg_tower"),
+                     ("proposed_tok_bi", "eeg_tower"), ("proposed_concat", "eeg_tower")]:
+            if a in F and b in F:
+                dd = 100 * (F[a] - F[b]).to_numpy()
+                define("split", f"{a}@{b}", f"from {dd.min():+.1f} to {dd.max():+.1f} points, positive in "
+                                            f"{int((dd > 0).sum())} of {len(dd)} folds")
+    # ---- round 6: prior validity and scene content vs low-level information (Urban Appraisal)
+    dpv = latest("priorvalidity_*")
+    if dpv is not None:
+        fmtp = lambda v: "$<0.001$" if v < 1e-3 else f"{v:.3f}"
+        T = pd.read_csv(dpv / "prior_validity_tests.csv")
+        for r in T.itertuples():
+            k = f"{r.segmentation}@{r.predictor}@{r.target}"
+            define("pv", k, f"{r.rho:.2f} [{r.lo:.2f}, {r.hi:.2f}]")
+            define("pv", f"{k}@rho", f"{r.rho:.2f}")
+            define("pv", f"{k}@p", fmtp(r.p))
+            if pd.notna(getattr(r, "p_holm", np.nan)):
+                define("pv", f"{k}@padj", fmtp(r.p_holm))
+            define("pv", f"{k}@npos", f"{r.n_positive} of {r.n_people}")
+        if (dpv / "prior_validity_other_segmentations.csv").exists():
+            for r in pd.read_csv(dpv / "prior_validity_other_segmentations.csv").itertuples():
+                k = f"{r.segmentation}@{r.predictor}@{r.target}"
+                define("pv", k, f"{r.rho:.2f} [{r.lo:.2f}, {r.hi:.2f}]")
+                define("pv", f"{k}@rho", f"{r.rho:.2f}")
+                if pd.notna(getattr(r, "p_holm", np.nan)):
+                    define("pv", f"{k}@padj", fmtp(r.p_holm))
+        Q = pd.read_csv(dpv / "prior_validity_quartile_rule.csv")
+        for r in Q.itertuples():
+            define("pvq", f"{r.target}@{r.subset}", f"{r.mean_z:.2f} [{r.lo:.2f}, {r.hi:.2f}]")
+            define("pvq", f"{r.target}@{r.subset}@m", f"{r.mean_z:.2f}")
+            if pd.notna(getattr(r, "p", np.nan)):
+                define("pvq", f"{r.target}@{r.subset}@p", fmtp(r.p))
+        V = pd.read_csv(dpv / "variance_partition.csv")
+        V = V[V.measure == "r2"]
+        for r in V.itertuples():
+            define("vp", f"{r.target}@{r.part}", f"{100 * r.mean:.1f} [{100 * r.lo:.1f}, {100 * r.hi:.1f}]")
+            define("vp", f"{r.target}@{r.part}@m", f"{100 * r.mean:.1f}")
+        for tgt, g in V.groupby("target"):
+            g = g.set_index("part")["mean"]
+            define("vp", f"{tgt}@sharedfrac", f"{100 * g['shared'] / g['r2_both']:.0f}")
+        G = pd.read_csv(dpv / "residual_greenery.csv")
+        for r in G.itertuples():
+            define("rg", r.target, f"{r.rho:.2f} [{r.lo:.2f}, {r.hi:.2f}]")
+            define("rg", f"{r.target}@p", fmtp(r.p))
+        M = pd.read_csv(dpv / "meta.csv", index_col=0).iloc[:, 0]
+        define("val", "aucgreenHT", f"{float(M['auc_greenery_HT_vs_LT']):.2f}")
+        define("val", "rtwogreenlow", f"{100 * float(M['r2_greenery_on_lowlevel']):.0f}")
+    # ---- round 6: image controls and segmentation models (Kaggle geocog-vision6)
+    v6 = RESULTS / "vision6" / "group_benchmark_v6.csv"
+    if v6.exists():
+        for r in pd.read_csv(v6).itertuples():
+            define("vsix", r.features.replace("@", "_"), f"{r.mean_r:.3f}")
+            define("vsix", f"{r.features.replace('@', '_')}@sd", f"{r.sd_over_partitions:.3f}")
+    s6 = RESULTS / "vision6" / "segmentation_agreement_v6.csv"
+    if s6.exists():
+        S6 = pd.read_csv(s6)
+        for r in S6.itertuples():
+            define("segag", f"{r.model}@{r.category}", f"{r.pearson_r:.2f}")
+            define("segag", f"{r.model}@{r.category}@mad", f"{100 * r.mean_abs_diff:.1f}")
+        for mdl, g in S6[S6.category.isin(["greenery", "buildings", "sky", "ground", "vehicles"])].groupby("model"):
+            define("segag", f"{mdl}@min5", f"{g.pearson_r.min():.2f}")
+    sb = RESULTS / "vision_stats" / "scene_bootstrap.csv"
+    if sb.exists():
+        for r in pd.read_csv(sb).itertuples():
+            key = r.set.replace(" - ", "@minus@")
+            define("sboot", key, f"{r.mean_r:.3f} [{r.lo:.3f}, {r.hi:.3f}]")
+            define("sboot", f"{key}@ci", f"{r.lo:.3f}, {r.hi:.3f}")
+
     # ---- values behind Table 5 for the comparison figure (published value, ours, interval)
     forest = []
-    eav_rows = {"p1": ("P1: chronological 70/30, 5 s", 60.0), "p5": ("P5: half the segments tested, 5 s", 72.5),
-                "p2": ("P2: random trials 60/10/30, 20 s", 74.25), "p3": ("P3: leave one subject out, 2 s", 56.2)}
-    for proto, (label, pub) in eav_rows.items():
+    eav_rows = {"p1": ("P1: chronological 70/30, 5 s", 60.0, "Lee et al. 2024"),
+                "p5": ("P5: half the segments tested, 5 s", 72.5, "Malallah & Iqbal 2025"),
+                "p2": ("P2: random trials 60/10/30, 20 s", 74.25, "Gong et al. 2026"),
+                "p3": ("P3: leave one subject out, 2 s", 56.2, "Lee et al. 2026")}
+    for proto, (label, pub, study) in eav_rows.items():
         if proto in selected_rows:
             r = selected_rows[proto]
-            forest.append({"panel": "EAV", "label": label, "published": pub, "ours": 100 * r.test_mean,
-                           "lo": 100 * r.test_lo, "hi": 100 * r.test_hi})
-    def vis_row(path, key, label, pub):
+            forest.append({"panel": "EAV", "label": label, "name": study, "detail": label, "published": pub,
+                           "ours": 100 * r.test_mean, "lo": 100 * r.test_lo, "hi": 100 * r.test_hi,
+                           "higher": 100 * r.test_lo > pub})
+    sbf = RESULTS / "vision_stats" / "scene_bootstrap.csv"
+    SB = pd.read_csv(sbf).set_index("set") if sbf.exists() else None
+
+    def vis_row(path, key, label, pub, name, detail, ref=None):
+        """Group-level rows: 95% interval over scenes (bootstrap, round 6) where available, otherwise +/- 2 SD
+        over partitions; 'higher' = the paired difference from our reproduction `ref` is above zero."""
         if path.exists():
             V = pd.read_csv(path).set_index("features")
             if key in V.index:
                 m, sd = V.loc[key, "mean_r"], V.loc[key, "sd_over_partitions"]
-                forest.append({"panel": "UA", "label": label, "published": pub, "ours": m, "lo": m - 2 * sd, "hi": m + 2 * sd})
+                if SB is not None and key in SB.index and f"{key} - {ref}" in SB.index:
+                    lo, hi = SB.loc[key, "lo"], SB.loc[key, "hi"]
+                    higher = bool(SB.loc[f"{key} - {ref}", "lo"] > 0)
+                else:
+                    lo, hi, higher = m - 2 * sd, m + 2 * sd, bool(m - 2 * sd > pub)
+                forest.append({"panel": "UA", "label": label, "name": name, "detail": detail, "published": pub,
+                               "ours": m, "lo": lo, "hi": hi, "higher": higher})
     v1, v3 = RESULTS / "vision" / "group_benchmark.csv", RESULTS / "vision3" / "group_benchmark_v3.csv"
     v4, v5 = RESULTS / "vision4" / "group_benchmark_v4.csv", RESULTS / "vision5" / "group_benchmark_v5.csv"
     for key, label, pub in [("siglip_so400m", "SigLIP SO400M", 0.87), ("clip_vitl14", "CLIP ViT-L/14", 0.84),
                             ("dinov2_large", "DINOv2 ViT-L", 0.80)]:
         if v5.exists():                                                 # final pre-specified representation
-            vis_row(v5, f"{key}_embedpatch", f"{label}, new readout", pub)
+            vis_row(v5, f"{key}_embedpatch", f"{label}, new readout", pub, label, "same encoder, new readout", ref=key)
         else:
-            vis_row(v4, key, f"{label}, ten-view readout", pub)
-    vis_row(v1, "segmentation_lowlevel", "Composition + low-level (vs ADE20K proportions)", 0.57)
+            vis_row(v4, key, f"{label}, ten-view readout", pub, label, "same encoder, ten-view readout")
+    vis_row(v1, "segmentation_lowlevel", "Composition + low-level (vs ADE20K proportions)", 0.57,
+            "Composition + low-level", "vs ADE20K class proportions", ref="composition_only")
     if v5.exists():
-        vis_row(v5, "ensemble_v5", "Pre-specified ensemble (vs best model)", 0.87)
+        vis_row(v5, "ensemble_v5", "Pre-specified ensemble (vs best model)", 0.87, "Pre-specified ensemble",
+                "vs best published model", ref="siglip_so400m")
     else:
-        vis_row(v3, "ensemble_v3", "Pre-specified ensemble (vs best model)", 0.87)
+        vis_row(v3, "ensemble_v3", "Pre-specified ensemble (vs best model)", 0.87, "Pre-specified ensemble",
+                "vs best published model")
     if forest:
         pd.DataFrame(forest).to_csv(RESULTS / "table5_forest.csv", index=False)
     (MS / "results_values.tex").write_text("\n".join(lines) + "\n")
