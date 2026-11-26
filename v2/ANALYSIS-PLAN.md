@@ -113,3 +113,6 @@ are frozen on 1 December 2026; anything added after that date will be marked as 
   the 55 scenes with the predictions held fixed; intervals for the reproduction sets, the v5 readout of the
   same encoders, both pre-specified ensembles and the composition sets, and paired differences against the
   reproduction of the same encoder. 22:21: extended to the round-3 and round-4 pre-specified ensembles.
+- **23:51, results recorded (round 6).** The Holm family declared for the ablation table spans that table and the
+  separate fusion-operator table (14 paired comparisons, adjusted as one family). Split-wise paired differences
+  are computed from the saved predictions of the cross-validation runs.
