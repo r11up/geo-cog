@@ -1,7 +1,7 @@
 # geo-cog v2: revision code
 
-Code for the revised manuscript *Neuro-Geospatial Modelling of EEG Affective States Using
-Literature-Informed and Co-Registered Environmental Context*. Version 1 (the repository root) is the
+Code for the revised manuscript *Neuro-Geospatial Modelling of EEG Affective States: A Test of
+Literature-Informed Environmental Priors, Protocol-Matched Benchmarks and a Co-Registered Extension*. Version 1 (the repository root) is the
 code of the original submission and is kept unchanged.
 
 ## What v2 adds
@@ -57,6 +57,9 @@ python -I code/scripts/eav_explore.py                    # EEG pipelines, develo
 python -I code/scripts/eav_benchmark.py --variants logreg_both_pooled hgb_both_pooled
 python -I code/scripts/run_study1_v2.py --protocol cv    # also: lockbox, benchmark
 python -I code/scripts/eav_protocols.py --protocol p2    # published protocols: p2, p3, p4
+python -I code/scripts/eav_newmethods.py --protocol p1   # further methods on the published splits (p1, p2, p3);
+                                                         # the reported one is chosen on validation data
+python -I code/scripts/eav_cbramod.py --protocol p1      # EEG foundation model CBraMod (p1 fine-tuned, p3 frozen)
 
 # Study 2
 python -I code/scripts/prep_eeg.py
@@ -65,6 +68,8 @@ python -I code/scripts/run_deep.py                       # GPU; see kaggle/
 python -I code/scripts/decode_environment.py             # decode scene composition from EEG
 python -I code/scripts/export_scene_bundle.py            # images + ratings for kaggle/kernel_vision
 python -I code/scripts/person_level_embeddings.py        # after kernel_vision: unseen people x scenes
+# kaggle/kernel_vision3: larger encoders, mirrored-image averaging and language-anchored features
+# for the group-level appraisal benchmark (pre-specified equal-weight ensemble)
 python -I code/scripts/fig_decoding_time.py              # after kaggle/kernel_decode
 
 # Figures and tests

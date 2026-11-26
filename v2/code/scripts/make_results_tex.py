@@ -231,6 +231,37 @@ def main():
         for r in pd.read_csv(vb).itertuples():
             define("vis", r.features, f"{r.mean_r:.3f}")
             define("vis", f"{r.features}@sd", f"{r.sd_over_partitions:.3f}")
+    # ---- new methods under the published EAV protocols (candidate selected on validation data)
+    base_desc = "tangent-space band covariances with DE and log power, re-centred per participant; logistic regression"
+    drift = "training and test trials re-centred separately (unsupervised drift correction)"
+    desc = {"base": base_desc, "align": f"{base_desc}; {drift}", "fb7": f"{base_desc}; seven bands",
+            "crops": f"{base_desc}; training windows every 1 s", "ens": f"{base_desc}; vote with shrinkage LDA",
+            "all": f"{base_desc}; seven bands; training windows every 1 s; vote with shrinkage LDA"}
+    for proto in ("p1", "p2", "p3"):
+        done = [Path(x) for x in sorted(glob.glob(str(RESULTS / f"eav_new_{proto}_*"))) if (Path(x) / "meta.json").exists()]
+        if not done:                                                    # only finished runs
+            continue
+        d = done[-1]
+        S = pd.read_csv(d / "summary.csv")
+        for r in S.itertuples():
+            define("newm", f"{proto}@{r.candidate}", f"{pct(r.test_mean)} [{pct(r.test_lo)}, {pct(r.test_hi)}]")
+            define("newm", f"{proto}@{r.candidate}@m", pct(r.test_mean))
+            define("newm", f"{proto}@{r.candidate}@val", pct(r.validation))
+        if "selected" in S and S.selected.any():
+            sel = S[S.selected].iloc[0]
+            define("newm", f"{proto}@selected", f"{pct(sel.test_mean)} [{pct(sel.test_lo)}, {pct(sel.test_hi)}]")
+            define("newm", f"{proto}@selected@m", pct(sel.test_mean))
+            define("newm", f"{proto}@selected@name", sel.candidate)
+            d_sel = desc[sel.candidate]
+            if proto == "p1" and sel.candidate == "all":
+                d_sel += f"; {drift}"
+            define("newm", f"{proto}@selected@desc", d_sel)
+    # ---- Urban Appraisal: group-level benchmark with the new image methods
+    vb3 = RESULTS / "vision3" / "group_benchmark_v3.csv"
+    if vb3.exists():
+        for r in pd.read_csv(vb3).itertuples():
+            define("visn", r.features, f"{r.mean_r:.3f}")
+            define("visn", f"{r.features}@sd", f"{r.sd_over_partitions:.3f}")
     # ---- Urban Appraisal: person-level, unseen people x unseen scenes, scene representations
     d = latest("person_embeddings_*")
     if d is not None:
