@@ -62,7 +62,7 @@ preprocessed epochs in a private dataset.
 |---|---|
 | 1, 3, 4 (diagrams) | `python figures/diagrams/make_fig1_overview.py`, `make_fig3_architecture.py`, `make_fig5_protocol.py`, then export with the draw.io CLI |
 | 2 (study area) | `python figures/graphics/make_assets.py` |
-| 5 (scene composition) | `python -I code/scripts/fig_scene_composition.py` |
+| 5 (scene composition and its correlation with the ratings) | `python -I code/scripts/fig_scene_composition.py` |
 | 6 (decoding over time) | `python -I code/scripts/fig_decoding_time.py` |
 | 7 (comparison with published results) | `python -I code/scripts/fig_compare.py` |
 

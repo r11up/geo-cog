@@ -91,3 +91,6 @@ are frozen on 1 December 2026; anything added after that date will be marked as 
 - **14:38, results recorded.** In the selection split of round 5, per-participant models chose their penalty
   on the same validation windows, which favours them slightly in selection; every candidate's test result is
   reported, and no conclusion depends on the choice.
+- **15:12, before computing.** Descriptive panel for the scene-composition figure: Spearman correlations over
+  the 56 scenes between the five composition shares and the scene means of the nine rating scales (62
+  participants). Descriptive only; no tests and nothing selected on it.

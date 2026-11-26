@@ -251,6 +251,15 @@ def main():
             define("equiv", f"{r.comparison}@ci", f"{r.ci90_lo:.1f} to {r.ci90_hi:.1f}")
             define("equiv", f"{r.comparison}@p", "$<$ 0.001" if r.p_tost < 0.001 else f"$=$ {r.p_tost:.3f}")
             define("equiv", f"{r.comparison}@margin", f"{r.margin:.0f}")
+    # ---- descriptive: composition shares against scene-mean ratings (scene-composition figure, declared 26 Nov)
+    rho_csv = PROJECT_ROOT / "figures" / "data" / "fig_scene_composition_rho.csv"
+    if rho_csv.exists():
+        R = pd.read_csv(rho_csv, index_col="category")
+        for cat, row in R.iterrows():
+            for scale, v in row.items():
+                define("comprho", f"{cat}@{scale}", f"{v:.2f}".replace("-", "$-$"))
+        prim = R[["valence", "arousal", "stress"]]
+        define("comprho", "buildings@primary_maxabs", f"{prim.loc['buildings'].abs().max():.2f}")
     # ---- new methods under the published EAV protocols (candidate selected on validation data)
     base_desc = "TS + DE/LP; LR"
     drift = "training and test trials re-centred separately (drift correction)"
@@ -378,6 +387,11 @@ def main():
                 fmt = ".3f" if "code" in task else ".2f"
                 define("kdec", f"cbramod@{task}", f"{format(v['mean'], fmt)} [{format(v['lo'], fmt)}, {format(v['hi'], fmt)}]")
                 define("kdec", f"cbramod@{task}@m", format(v["mean"], fmt))
+    if (kd / "partD_cbramod_ft.json").exists():
+        dd = json.load(open(kd / "partD_cbramod_ft.json"))
+        for model, v in dd.items():
+            define("kdec", f"{model}@greenery_code", f"{v['mean']:.3f} [{v['lo']:.3f}, {v['hi']:.3f}]")
+            define("kdec", f"{model}@greenery_code@m", f"{v['mean']:.3f}")
     if (kd / "partC_deep.json").exists():
         c = json.load(open(kd / "partC_deep.json"))
         for model, v in c.items():
@@ -404,9 +418,9 @@ def main():
     for key, label, pub in [("siglip_so400m", "SigLIP SO400M", 0.87), ("clip_vitl14", "CLIP ViT-L/14", 0.84),
                             ("dinov2_large", "DINOv2 ViT-L", 0.80)]:
         if v5.exists():                                                 # final pre-specified representation
-            vis_row(v5, f"{key}_embedpatch", f"{label}, same encoder", pub)
+            vis_row(v5, f"{key}_embedpatch", f"{label}, new readout", pub)
         else:
-            vis_row(v4, key, f"{label}, same encoder", pub)
+            vis_row(v4, key, f"{label}, ten-view readout", pub)
     vis_row(v1, "segmentation_lowlevel", "Composition + low-level (vs ADE20K proportions)", 0.57)
     if v5.exists():
         vis_row(v5, "ensemble_v5", "Pre-specified ensemble (vs best model)", 0.87)
