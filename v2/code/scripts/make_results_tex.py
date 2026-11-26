@@ -392,6 +392,7 @@ def main():
         for model, v in dd.items():
             define("kdec", f"{model}@greenery_code", f"{v['mean']:.3f} [{v['lo']:.3f}, {v['hi']:.3f}]")
             define("kdec", f"{model}@greenery_code@m", f"{v['mean']:.3f}")
+            define("kdec", f"{model}@greenery_code@nabove", f"{round(v['above_null'] * v['n'])} of {v['n']}")
     if (kd / "partC_deep.json").exists():
         c = json.load(open(kd / "partC_deep.json"))
         for model, v in c.items():
