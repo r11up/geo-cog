@@ -546,7 +546,8 @@ def main():
             r = selected_rows[proto]
             forest.append({"panel": "EAV", "label": label, "name": study, "detail": label, "published": pub,
                            "ours": 100 * r.test_mean, "lo": 100 * r.test_lo, "hi": 100 * r.test_hi,
-                           "higher": 100 * r.test_lo > pub})
+                           "higher": 100 * r.test_lo > pub, "reference": pub, "gain": 100 * r.test_mean - pub,
+                           "gain_lo": 100 * r.test_lo - pub, "gain_hi": 100 * r.test_hi - pub})
     sbf = RESULTS / "vision_stats" / "scene_bootstrap.csv"
     SB = pd.read_csv(sbf).set_index("set") if sbf.exists() else None
 
@@ -559,11 +560,15 @@ def main():
                 m, sd = V.loc[key, "mean_r"], V.loc[key, "sd_over_partitions"]
                 if SB is not None and key in SB.index and f"{key} - {ref}" in SB.index:
                     lo, hi = SB.loc[key, "lo"], SB.loc[key, "hi"]
-                    higher = bool(SB.loc[f"{key} - {ref}", "lo"] > 0)
+                    g = SB.loc[f"{key} - {ref}"]                 # paired over scenes, against our reproduction
+                    higher = bool(g["lo"] > 0)
+                    reference, gain, gain_lo, gain_hi = SB.loc[ref, "mean_r"], g["mean_r"], g["lo"], g["hi"]
                 else:
                     lo, hi, higher = m - 2 * sd, m + 2 * sd, bool(m - 2 * sd > pub)
+                    reference, gain, gain_lo, gain_hi = pub, m - pub, lo - pub, hi - pub
                 forest.append({"panel": "UA", "label": label, "name": name, "detail": detail, "published": pub,
-                               "ours": m, "lo": lo, "hi": hi, "higher": higher})
+                               "ours": m, "lo": lo, "hi": hi, "higher": higher, "reference": reference,
+                               "gain": gain, "gain_lo": gain_lo, "gain_hi": gain_hi})
     v1, v3 = RESULTS / "vision" / "group_benchmark.csv", RESULTS / "vision3" / "group_benchmark_v3.csv"
     v4, v5 = RESULTS / "vision4" / "group_benchmark_v4.csv", RESULTS / "vision5" / "group_benchmark_v5.csv"
     for key, label, pub in [("siglip_so400m", "SigLIP SO400M", 0.87), ("clip_vitl14", "CLIP ViT-L/14", 0.84),
