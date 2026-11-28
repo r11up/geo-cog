@@ -131,3 +131,11 @@ analysis is recorded here before it is run.
   interval above 0 or within +/-5 points, it is reported as a method gain with both split effects; otherwise it is
   reported without a gain claim. The split-effect statement is restated like for like (per participant with per
   participant, pooled with pooled) whatever the result.
+
+## 29 November 2026
+
+- **01:32, result (round 7).** EEGNet gained 9.6 points [7.3, 11.9] from the change of split (P4 minus P1) and the
+  reference pipeline 20.9 [18.6, 23.2]; the paired difference, -11.4 [-13.7, -9.1], lies below 0. By the rule of
+  28 November 23:10, the P2 result is not reported as a gain over the published model and is moved to the section on
+  evaluation protocols. Checks: the reference pipeline reproduced its saved P2 (84.9%) and P4 (79.4%) values; EEGNet
+  reached 49.3% under P1 against the published 60.0% with the same settings, which the paper states as a caveat.

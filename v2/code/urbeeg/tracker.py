@@ -16,6 +16,8 @@ TITLES = {
     "final-benchmark": "FINAL: published EAV protocol (chronological 70/30 per participant), all 42",
     "published-p2": "Protocol of Gong et al. 2026 (LEL): random trials 60/10/30 per participant, 20 s trials, all 42",
     "published-p3": "Protocol of Lee, Suresh Chandra & Hansen 2026: leave-one-subject-out, 2 s epochs (balanced acc.)",
+    "round7-splits": "Round 7 (declared 28 Nov 23:10): one model per participant, EEGNet vs reference pipeline under "
+                     "P1, P2, P4, all 42 (Kaggle GPU)",
 }
 
 

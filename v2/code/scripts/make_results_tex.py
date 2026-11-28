@@ -226,6 +226,31 @@ def main():
             f1 = getattr(r, "f1_macro", np.nan) if proto != "p3" else getattr(r, "f1_weighted", np.nan)
             if pd.notna(f1):
                 define("prot", f"{proto}@{r.model}@f1", f"{f1:.3f}")
+    # ---- EAV round 7 (declared 28 Nov 23:10): split effect for EEGNet and the reference pipeline, one model per
+    # participant, same training sets; d = segment accuracy under P4 minus under P1
+    d = latest("eav_eegnet_splits_2*")
+    if d is not None and not d.name.endswith("_quick"):
+        for r in pd.read_csv(d / "summary.csv").itertuples():
+            define("esplit", f"{r.model}@{r.protocol}", f"{r.mean:.1f} [{r.lo:.1f}, {r.hi:.1f}]")
+            define("esplit", f"{r.model}@{r.protocol}@m", f"{r.mean:.1f}")
+            define("esplit", f"{r.model}@{r.protocol}@seg", f"{r.acc_segment:.1f}")
+            define("esplit", f"{r.model}@{r.protocol}@trial", f"{r.acc_trial:.1f}")
+        st = json.loads((d / "stats.json").read_text())
+        for k, key in (("eegnet", "eegnet"), ("logreg", "logreg"), ("difference_eegnet_minus_logreg", "diff")):
+            m, (lo, hi) = st[k]["mean"], st[k]["ci"]
+            define("esplit", f"d@{key}@m", f"{abs(m):.1f}" if key == "diff" else f"{m:.1f}")
+            define("esplit", f"d@{key}", f"{m:.1f} [{lo:.1f}, {hi:.1f}]")
+            define("esplit", f"d@{key}@abs", f"{abs(m):.1f} [{min(abs(lo), abs(hi)):.1f}, {max(abs(lo), abs(hi)):.1f}]")
+        define("esplit", "verdict", st["verdict"].split(":")[0])
+        meta = json.loads((d / "meta.json").read_text())
+        define("esplit", "n_subjects", str(meta["n_subjects"]))
+        define("esplit", "n_rep", str(meta["n_rep"]))
+    # pooled model (one model over all participants): P1 from the benchmark run, P4 from the protocol run
+    db, d4 = latest("study1v2_benchmark_*"), latest("eav_p4_*")
+    if db is not None and d4 is not None:
+        b = pd.read_csv(db / "summary.csv").set_index("condition").loc["eeg_logreg", "acc_epoch"]
+        q = pd.read_csv(d4 / "summary.csv").set_index("model").loc["logreg_pooled", "mean"]
+        define("esplit", "d@pooled@m", f"{100 * (q - b):.1f}")
     # ---- Urban Appraisal: group-level vision benchmark (Tan & Deng protocol)
     vb = RESULTS / "vision" / "group_benchmark.csv"
     if vb.exists():
@@ -537,11 +562,11 @@ def main():
 
     # ---- values behind Table 5 for the comparison figure (published value, ours, interval)
     forest = []
-    # EAV comparisons in the figure: published splits that are fully described (P1, P2, P3). P5 (Malallah & Iqbal)
-    # is left out: its split is not stated and their EEGNet baseline (59.94%) matches the chronological P1 value,
-    # so our random-split reading of it is doubtful. P5 macros are still written.
+    # EAV comparisons in the figure: the strictest published splits (P1, P3). P2 (Gong et al.) is left out by the
+    # rule declared 28 Nov 23:10 (round 7, verdict ii: a random split raises our pipeline more than EEGNet), and is
+    # reported in the protocol section. P5 (Malallah & Iqbal) is left out: its split is not stated and their EEGNet
+    # baseline (59.94%) matches the chronological P1 value. P2 and P5 macros are still written.
     eav_rows = {"p1": ("P1: chronological 70/30, 5 s", 60.0, "Lee et al. 2024"),
-                "p2": ("P2: random trials 60/10/30, 20 s", 74.25, "Gong et al. 2026"),
                 "p3": ("P3: leave one subject out, 2 s", 56.2, "Lee et al. 2026")}
     for proto, (label, pub, study) in eav_rows.items():
         if proto in selected_rows:

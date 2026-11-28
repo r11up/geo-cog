@@ -29,8 +29,8 @@ ROW, AXIS, TITLE, HEAD, GAP = 0.26, 0.40, 0.19, 0.13, 0.08   # vertical layout (
 X0, X1 = 1.70, 3.48                                          # plot area (inches from the left edge)
 C1, C2 = 3.60, 4.58                                          # right-hand columns
 PANELS = [
-    dict(key="EAV", title="A  EAV: five affective states from EEG",
-         xlabel="Gain over the published accuracy (percentage points)", xlim=(-5, 15), ticks=[-5, 0, 5, 10, 15],
+    dict(key="EAV", title="A  EAV: five affective states from EEG, strictest published splits",
+         xlabel="Gain over the published accuracy (percentage points)", xlim=(-5, 10), ticks=[-5, 0, 5, 10],
          nd=1, gain_head="Gain"),
     dict(key="UA", title="B  Urban Appraisal: group means of 55 scenes (Tan & Deng protocol)",
          xlabel="Paired gain in r over our reproduction", xlim=(-0.02, 0.15), ticks=[0, 0.05, 0.10, 0.15],
