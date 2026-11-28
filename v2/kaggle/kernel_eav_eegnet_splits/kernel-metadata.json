@@ -1,0 +1,13 @@
+{
+  "id": "utsavghhjg/geocog-eav-eegnet-splits",
+  "title": "geocog-eav-eegnet-splits",
+  "code_file": "run.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": ["utsavghhjg/eav-epochs-private", "utsavghhjg/eav-study1-private", "utsavghhjg/geocog-code"],
+  "competition_sources": [],
+  "kernel_sources": []
+}
