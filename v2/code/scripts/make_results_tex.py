@@ -537,8 +537,10 @@ def main():
 
     # ---- values behind Table 5 for the comparison figure (published value, ours, interval)
     forest = []
+    # EAV comparisons in the figure: published splits that are fully described (P1, P2, P3). P5 (Malallah & Iqbal)
+    # is left out: its split is not stated and their EEGNet baseline (59.94%) matches the chronological P1 value,
+    # so our random-split reading of it is doubtful. P5 macros are still written.
     eav_rows = {"p1": ("P1: chronological 70/30, 5 s", 60.0, "Lee et al. 2024"),
-                "p5": ("P5: half the segments tested, 5 s", 72.5, "Malallah & Iqbal 2025"),
                 "p2": ("P2: random trials 60/10/30, 20 s", 74.25, "Gong et al. 2026"),
                 "p3": ("P3: leave one subject out, 2 s", 56.2, "Lee et al. 2026")}
     for proto, (label, pub, study) in eav_rows.items():
