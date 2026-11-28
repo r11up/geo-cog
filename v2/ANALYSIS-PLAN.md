@@ -121,3 +121,13 @@ analysis is recorded here before it is run.
 
 - **22:21.** The freeze date of 1 December 2026 given in earlier versions of this file is withdrawn.
   Analyses may be added until submission; each is recorded here before it is run, as before.
+- **23:10, before running (round 7).** Whether a random split inflates a convolutional network as much as the
+  covariance pipeline. One model per participant, all 42: EEGNet with the dataset paper's recipe (F1 8, D 8, F2 16,
+  kernel 300, Adam, batch 32, 100 epochs, no early stopping) and the reference pipeline (DE/LP + re-centred
+  tangent-space covariances, logistic regression), on the same training sets under P1 (chronological), P2 (random
+  trials, 5 assignments) and P4 (random segments, 5 assignments). Primary: the paired difference between the two
+  models' split effects (segment accuracy P4 minus P1) with a 95% bootstrap interval over participants. Rule: interval
+  below 0, the P2 result is not reported as a gain over the published model and moves to the protocol section;
+  interval above 0 or within +/-5 points, it is reported as a method gain with both split effects; otherwise it is
+  reported without a gain claim. The split-effect statement is restated like for like (per participant with per
+  participant, pooled with pooled) whatever the result.
