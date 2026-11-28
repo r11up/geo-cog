@@ -31,7 +31,7 @@ from datetime import datetime
 from pathlib import Path
 
 ON_KAGGLE = os.path.isdir("/kaggle/input")
-WORK_DERIVED = "/kaggle/working/derived"
+WORK_DERIVED = "/tmp/derived"            # outside /kaggle/working: links to EEG data never reach the output
 if ON_KAGGLE:
     import subprocess
     subprocess.run([sys.executable, "-m", "pip", "install", "-q", "braindecode", "pyriemann"], check=False)
@@ -163,6 +163,8 @@ def main():
                         "n_test": len(te_s)}
                 rows.append(base | {"model": "eegnet"} | score(D, te_s, P_e))
                 rows.append(base | {"model": "logreg", "C": lr[s][1]} | score(D, te_s, lr[s][0]))
+                if (len(rows) // 2) % 14 == 0:
+                    print(f"  {protocol} rep {rep}: {len(rows) // 2} fits done ({time.time() - t0:.0f} s)", flush=True)
             g = pd.DataFrame(rows).query("protocol == @protocol and rep == @rep").groupby("model")
             print(f"{protocol} rep {rep}: " + ", ".join(f"{m} seg {100 * d.acc_segment.mean():.1f} trial "
                   f"{100 * d.acc_trial.mean():.1f}" for m, d in g) + f" ({time.time() - t0:.0f} s)", flush=True)
