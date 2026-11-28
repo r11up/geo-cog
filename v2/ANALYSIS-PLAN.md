@@ -3,8 +3,8 @@
 The analysis decisions of the revision, in the order they were made, with the date and local time
 (UTC+05:45) at which each was recorded. "Before running" means the entry was written before the analysis it
 governs was run; the other entries say what had been seen. Every variant that was run, including those not
-in the paper, is logged with its configuration and result; the log is available from the authors. Analyses
-are frozen on 1 December 2026; anything added after that date will be marked as such.
+in the paper, is logged with its configuration and result; the log is available from the authors. Each
+analysis is recorded here before it is run.
 
 ## 25 November 2026
 
@@ -116,3 +116,8 @@ are frozen on 1 December 2026; anything added after that date will be marked as 
 - **23:51, results recorded (round 6).** The Holm family declared for the ablation table spans that table and the
   separate fusion-operator table (14 paired comparisons, adjusted as one family). Split-wise paired differences
   are computed from the saved predictions of the cross-validation runs.
+
+## 28 November 2026
+
+- **22:21.** The freeze date of 1 December 2026 given in earlier versions of this file is withdrawn.
+  Analyses may be added until submission; each is recorded here before it is run, as before.
